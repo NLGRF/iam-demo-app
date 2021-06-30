@@ -1,7 +1,7 @@
 # Deploy iam-demo-app (nodejs) on EKS (k8s)
 
 ## IAM CI/CD v1 Overview
-![IAM CI/CD v1](images/iam_cicd_v1.png)
+![IAM CI/CD v1](images/iam_v1.png)
 
 ## Jenkins Pipeline Examples
 - Dev Env (Jenkinsfile): https://cicd.7-11.io/view/Dev-Env/job/Dev-demo-app-nodejs/
