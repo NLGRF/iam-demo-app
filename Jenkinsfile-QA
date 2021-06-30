@@ -1,0 +1,114 @@
+pipeline {
+    agent any
+    environment {
+        APP_GIT_URL = "https://gitlab.com/gosoft-sds/demo-app.git"
+        APP_BRANCH = "dev"
+        //APP_TAG = "latest"
+        APP_NAME = "iam-demo-app"
+        APP_PORT = "3000"
+        DEV_PROJECT = "qa"
+        NEXUS_SERVER = "repository.7-11.io"
+        NEXUS_SERVER_PULL_PORT = "5000"
+        NEXUS_SERVER_PUSH_PORT = "5001"
+        DOMAIN_NAME = "7-11.tech"
+
+    }
+    
+    stages {
+        stage('Clean') {
+            steps {
+                echo 'Clean Workspace'
+                sh '''
+                    rm -rf *
+                '''
+                echo 'Clean Demo App'
+                sh '''
+                    if kubectl get deployment ${APP_NAME} -n ${DEV_PROJECT}; then echo exists && kubectl delete deployment ${APP_NAME} -n ${DEV_PROJECT} && kubectl delete svc ${APP_NAME} -n ${DEV_PROJECT}; else echo no deployment; fi
+                '''
+            }
+        }
+
+        stage('SCM') {
+            steps {
+                echo 'Pull code from SCM'
+                git(
+                    url: "${APP_GIT_URL}",
+                    //credentialsId: 'gitlab-cicd',
+                    branch: "${APP_BRANCH}"
+                )
+            }
+        }
+
+        stage('Deploy to QA ENV') {
+            steps {
+                echo 'Deploy to QA ENV'
+                sh '''
+                    kubectl create deployment ${APP_NAME} -n ${DEV_PROJECT} --image=${NEXUS_SERVER}:${NEXUS_SERVER_PULL_PORT}/${APP_NAME}:${APP_TAG}
+                '''
+
+            }
+        }
+
+        stage('Expose Service to QA ENV') {
+            steps {
+                echo 'Expose Service to QA ENV'
+                sh '''
+                    kubectl expose deployment ${APP_NAME} -n ${DEV_PROJECT} --port=80 --target-port=${APP_PORT}
+                '''
+
+            }
+        }
+
+        stage('Scale Demo App') {
+            steps {
+                echo 'Scale App'
+                sh '''
+                    kubectl scale deployment ${APP_NAME} -n ${DEV_PROJECT} --replicas=2
+                '''
+            }
+        }
+
+        stage('Create Ingress') {
+            steps {
+                echo 'Create Ingress'
+                sh '''
+                    cat <<EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: ${APP_NAME}
+  namespace: ${DEV_PROJECT}
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: ${APP_NAME}-${DEV_PROJECT}-${DEV_PROJECT}.${DOMAIN_NAME}
+      http:
+        paths:
+          - backend:
+              serviceName: ${APP_NAME}
+              servicePort: 80
+EOF
+                '''
+
+            }
+        }
+
+        stage('Check Demo App') {
+            steps {
+                echo 'Check Demo App'
+                sh '''
+                    sleep 30
+                    # ELB
+                    #STATUSCODE=$(curl -s -o /dev/null -I -w "%{http_code}" http://$ELB_ENDPOINT)
+
+                    # Service
+                    #STATUSCODE=$(curl -s -o /dev/null -I -w "%{http_code}" http://${APP_NAME}.${DEV_PROJECT}.svc.cluster.local)
+                    STATUSCODE=$(curl -s -o /dev/null -I -w "%{http_code}" http://${APP_NAME}-${DEV_PROJECT}.${DOMAIN_NAME})
+                    if test $STATUSCODE -ne 200; then echo ERROR:$STATUSCODE && exit 1; else echo SUCCESS; fi;
+                '''
+            }
+        }
+
+    }
+}
