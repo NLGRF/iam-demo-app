@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         APP_GIT_URL = "https://github.com/pornpasok/iam-demo-app.git"
-        APP_BRANCH = "dev"
+        APP_BRANCH = "main"
         //APP_TAG = "latest"
         APP_NAME = "iam-demo-app"
         APP_PORT = "3000"
