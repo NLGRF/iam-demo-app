@@ -59,8 +59,10 @@ pipeline {
             steps {
                 echo 'Build Docker Images'
                 sh '''
-                    #docker build -t ${DOCKER_USER}/${APP_NAME} .
-                    docker build -t ${NEXUS_SERVER}:${NEXUS_SERVER_PULL_PORT}/${APP_NAME} --network container:\$(docker ps | grep \$(hostname) | grep k8s_POD | cut -d\" \" -f1) .
+                    # Jenkins on Container
+                    #docker build -t ${NEXUS_SERVER}:${NEXUS_SERVER_PULL_PORT}/${APP_NAME} --network container:\$(docker ps | grep \$(hostname) | grep k8s_POD | cut -d\" \" -f1) .
+                    # Jenkins on native Host
+                    docker build -t ${NEXUS_SERVER}:${NEXUS_SERVER_PULL_PORT}/${APP_NAME} .
                 '''
             }
         }
