@@ -34,7 +34,7 @@ pipeline {
                 echo 'Pull code from SCM'
                 git(
                     url: "${APP_GIT_URL}",
-                    credentialsId: 'gosoft-sds',
+                    //credentialsId: 'github-cicd',
                     branch: "${APP_BRANCH}"
                 )
             }
