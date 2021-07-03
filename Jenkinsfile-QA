@@ -1,8 +1,8 @@
 pipeline {
     agent any
     environment {
-        APP_GIT_URL = "https://gitlab.com/gosoft-sds/demo-app.git"
-        APP_BRANCH = "dev"
+        APP_GIT_URL = "https://github.com/pornpasok/iam-demo-app.git"
+        APP_BRANCH = "main"
         //APP_TAG = "latest"
         APP_NAME = "iam-demo-app"
         APP_PORT = "3000"
@@ -63,7 +63,7 @@ pipeline {
             steps {
                 echo 'Scale App'
                 sh '''
-                    kubectl scale deployment ${APP_NAME} -n ${DEV_PROJECT} --replicas=2
+                    kubectl scale deployment ${APP_NAME} -n ${DEV_PROJECT} --replicas=3
                 '''
             }
         }
